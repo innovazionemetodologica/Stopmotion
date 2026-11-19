@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inside an LLM — Come Funziona l'Intelligenza Artificiale Generativa</title>
+    <style>
+        :root {
+            --bg-main: #f8faff;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f1f5ff;
+            --border-color: #dbe4ff;
+            --border-strong: #c7d2fe;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --accent-purple: #7c3aed;
+            --accent-pink: #ec4899;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-orange: #f97316;
+            --gradient-main: linear-gradient(135deg, #7c3aed 0%, #ec4899 50%, #06b6d4 100%);
+            --gradient-soft: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(236, 72, 153, 0.08) 50%, rgba(6, 182, 212, 0.08) 100%);
+            --shadow-soft: 0 10px 25px -5px rgba(124, 58, 237, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+            --shadow-hover: 0 15px 30px -5px rgba(124, 58, 237, 0.16);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.14) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.10) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.10) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Header & Navigation */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(14px);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0.9rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.06);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-weight: 800;
+            font-size: 1.3rem;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--gradient-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 900;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
+        }
+
+        .nav-steps {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: #f1f5f9;
+            border: 1.5px solid transparent;
+            color: var(--text-secondary);
+            padding: 0.5rem 0.95rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .nav-btn:hover {
+            color: var(--accent-purple);
+            background: #ede9fe;
+            border-color: #ddd6fe;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn.active {
+            background: var(--gradient-main);
+            border-color: transparent;
+            color: #ffffff;
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
+        }
+
+        .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(124, 58, 237, 0.14);
+            color: var(--accent-purple);
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        .nav-btn.active .step-num {
+            background: #ffffff;
+            color: var(--accent-purple);
+        }
+
+        /* Main Container */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 5rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding: 2.2rem 1.5rem;
+            background: #ffffff;
+            border-radius: 24px;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: var(--gradient-main);
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 0.35rem 1rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(236, 72, 153, 0.12));
+            border: 1.5px solid rgba(124, 58, 237, 0.25);
+            color: var(--accent-purple);
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(1.9rem, 4vw, 2.85rem);
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 0.85rem;
+            background: linear-gradient(135deg, #4f46e5 0%, #ec4899 55%, #f97316 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            max-width: 720px;
+            margin: 0 auto;
+            color: var(--text-secondary);
+            font-size: 1.08rem;
+        }
+
+        /* Sections */
+        .module-section {
+            display: none;
+            animation: fadeIn 0.35s ease;
+        }
+
+        .module-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 1.75rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-title-group h2 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            color: var(--text-primary);
+        }
+
+        .section-title-group p {
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+            font-size: 1rem;
+        }
+
+        /* Cards & Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.6rem;
+            box-shadow: var(--shadow-soft);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: #a5b4fc;
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: var(--text-primary);
+            font-weight: 800;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.96rem;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.65rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .tag-purple { background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
+        .tag-cyan { background: #cffafe; color: #0e7490; border: 1px solid #a5f3fc; }
+        .tag-emerald { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+        .tag-amber { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .tag-pink { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+
+        /* Interactive Controls */
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.96rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            background: #ffffff;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+        }
+
+        .btn {
+            background: var(--gradient-main);
+            color: white;
+            border: none;
+            padding: 0.72rem 1.3rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(236, 72, 153, 0.35);
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        }
+
+        .btn-sm {
+            padding: 0.45rem 0.85rem;
+            font-size: 0.82rem;
+            border-radius: 9px;
+        }
+
+        /* MODULE 1: Tokenizer Visualizer */
+        .token-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            padding: 1.1rem;
+            background: #f1f5f9;
+            border-radius: 14px;
+            border: 2px dashed #cbd5e1;
+            min-height: 85px;
+            margin: 1rem 0;
+            align-items: center;
+        }
+
+        .token-chip {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.35rem 0.65rem;
+            border-radius: 9px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: 1.5px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.15s ease;
+        }
+
+        .token-chip:hover {
+            transform: scale(1.08);
+        }
+
+        .token-id {
+            font-size: 0.68rem;
+            opacity: 0.8;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+
+        .pipeline-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .pipeline-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.9rem;
+            padding: 0.9rem;
+            background: #f8faff;
+            border-radius: 14px;
+            border: 1.5px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .pipeline-item:hover {
+            transform: translateX(4px);
+            border-color: #a5b4fc;
+        }
+
+        .pipeline-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+            font-size: 1.15rem;
+        }
+
+        /* MODULE 2: Machine Learning Paradigms */
+        .ml-tabs {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1.1rem;
+            flex-wrap: wrap;
+        }
+
+        .ml-tab {
+            padding: 0.55rem 1.05rem;
+            border-radius: 10px;
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+        }
+
+        .ml-tab:hover {
+            background: #e0f2fe;
+            color: #0369a1;
+            border-color: #bae6fd;
+        }
+
+        .ml-tab.active {
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            border-color: transparent;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        .ml-demo-box {
+            background: #f8faff;
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.35rem;
+        }
+
+        /* MODULE 3: Neural Networks & Attention */
+        .nn-canvas-container {
+            background: linear-gradient(180deg, #f8faff 0%, #eef2ff 100%);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+            position: relative;
+        }
+
+        canvas {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+
+        .neuron-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .slider-group {
+            background: #f8faff;
+            padding: 0.8rem;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+        }
+
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-pink);
+            cursor: pointer;
+        }
+
+        /* Attention Matrix */
+        .attention-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin: 1rem 0;
+        }
+
+        .att-word {
+            padding: 0.45rem 0.85rem;
+            border-radius: 10px;
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .att-word:hover {
+            border-color: var(--accent-purple);
+            background: #ede9fe;
+        }
+
+        .att-word.selected {
+            background: var(--gradient-main);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
+            transform: translateY(-2px);
+        }
+
+        /* MODULE 4: Training Stages */
+        .training-timeline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stage-card {
+            background: #ffffff;
+            border: 2px solid var(--border-color);
+            border-radius: 18px;
+            padding: 1.4rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .stage-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+        }
+
+        .stage-1::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+        .stage-2::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+        .stage-3::before { background: linear-gradient(90deg, #10b981, #f59e0b); }
+
+        .loss-meter {
+            background: #f8faff;
+            border-radius: 14px;
+            padding: 1.2rem;
+            border: 2px solid var(--border-color);
+            margin-top: 1rem;
+        }
+
+        /* MODULE 5: Generative Playground (Text & Image) */
+        .gen-mode-switch {
+            display: inline-flex;
+            background: #eef2ff;
+            padding: 0.4rem;
+            border-radius: 14px;
+            border: 2px solid #c7d2fe;
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-btn {
+            padding: 0.65rem 1.3rem;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mode-btn.active {
+            background: var(--gradient-main);
+            color: white;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .prob-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.6rem;
+            font-size: 0.88rem;
+        }
+
+        .prob-word {
+            width: 115px;
+            font-family: 'Fira Code', monospace;
+            font-weight: 700;
+            color: #4f46e5;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .prob-track {
+            flex: 1;
+            height: 22px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .prob-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #ec4899);
+            border-radius: 8px;
+            transition: width 0.35s ease;
+        }
+
+        .prob-val {
+            width: 52px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .generated-output-box {
+            background: #f8faff;
+            border: 2px solid #c7d2fe;
+            border-radius: 14px;
+            padding: 1.35rem;
+            min-height: 135px;
+            font-size: 1.08rem;
+            line-height: 1.75;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 9px;
+            height: 1.15em;
+            background: var(--accent-pink);
+            vertical-align: middle;
+            margin-left: 3px;
+            border-radius: 2px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        /* Image Diffusion Simulator */
+        .diffusion-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #diffusionCanvas {
+            border: 3px solid #c7d2fe;
+            background: #ffffff;
+            box-shadow: 0 12px 30px rgba(124, 58, 237, 0.15);
+            border-radius: 14px;
+        }
+
+        .step-indicator {
+            display: flex;
+            gap: 0.35rem;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .step-dot {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            transition: background 0.3s;
+        }
+
+        .step-dot.done {
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+        }
+
+        /* Footer Navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--border-color);
+        }
+
+        @media (max-width: 640px) {
+            .neuron-controls { grid-template-columns: 1fr; }
+            .nav-steps { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="nav-container">
+        <div class="logo">
+            <div class="logo-icon">AI</div>
+            <span>Inside an LLM</span>
+        </div>
+        <nav class="nav-steps" id="navSteps">
+            <button class="nav-btn active" data-target="sec-data">
+                <span class="step-num">1</span> Dati & Token
+            </button>
+            <button class="nav-btn" data-target="sec-ml">
+                <span class="step-num">2</span> Machine Learning
+            </button>
+            <button class="nav-btn" data-target="sec-nn">
+                <span class="step-num">3</span> Reti Neurali
+            </button>
+            <button class="nav-btn" data-target="sec-train">
+                <span class="step-num">4</span> Addestramento
+            </button>
+            <button class="nav-btn" data-target="sec-gen">
+                <span class="step-num">5</span> Generazione Live
+            </button>
+        </nav>
+    </div>
+</header>
+
+<main>
+    <div class="hero">
+        <span class="hero-badge">Guida Interattiva all'Intelligenza Artificiale</span>
+        <h1>Come nasce e pensa un Large Language Model</h1>
+        <p>Esplora passo dopo passo tutte le componenti fondamentali dell'AI moderna: dai dati grezzi alle reti neurali Transformer, fino alla generazione in tempo reale di testi e immagini.</p>
+    </div>
+
+    <!-- =====================================================================
+         SEZIONE 1: DATI & TOKENIZZAZIONE
+    ====================================================================== -->
+    <section id="sec-data" class="module-section active">
+        <div class="section-header">
+            <div class="section-title-group">
+                <h2><span>📚</span> 1. I Dati & La Tokenizzazione</h2>
+                <p>Prima di "imparare", un modello deve trasformare la conoscenza umana in numeri comprensibili da una macchina.</p>
+            </div>
+            <span class="tag tag-cyan">Fondamenta</span>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <h3>🗄️ La Pipeline dei Dati</h3>
+                <p>Un LLM moderno viene nutrito con trilioni di parole provenienti da fonti eterogenee. Prima dell'addestramento, i dati subiscono una rigorosa lavorazione:</p>
+                <div class="pipeline-steps">
+                    <div class="pipeline-item">
+                        <div class="pipeline-icon" style="background: #cffafe; color: #0891b2;">🌐</div>
+                        <div>
+                            <strong>1. Raccolta (Web, Libri, Codice)</strong>
+                            <div style="font-size: 0.88rem; color: var(--text-secondary);">Articoli scientifici, Wikipedia, repository GitHub, letteratura e conversazioni pubbliche.</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-item">
+                        <div class="pipeline-icon" style="background: #d1fae5; color: #059669;">🧹</div>
+                        <div>
+                            <strong>2. Pulizia e Deduplicazione</strong>
+                            <div style="font-size: 0.88rem; color: var(--text-secondary);">Rimozione di spam, HTML superfluo, contenuti tossici e testi duplicati per evitare che il modello impari a memoria.</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-item">
+                        <div class="pipeline-icon" style="background: #ede9fe; color: #7c3aed;">🔢</div>
+                        <div>
+                            <strong>3. Tokenizzazione & Embeddings</strong>
+                            <div style="font-size: 0.88rem; color: var(--text-secondary);">Il testo viene spezzato in unità chiamate <em>token</em>, convertite poi in vettori multidimensionali che catturano il significato semantico.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>✂️ Laboratorio Interattivo: Tokenizzatore Live</h3>
+                <p>I modelli non leggono lettere o parole intere, ma <strong>token</strong> (pezzi di parole). Scrivi una frase qui sotto per vedere come un LLM la suddivide e le assegna un ID numerico:</p>
+                
+                <textarea id="tokenizerInput" rows="3" placeholder="Scrivi qualcosa qui...">L'intelligenza artificiale trasforma il futuro della tecnologia!</textarea>
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.65rem; flex-wrap: wrap;">
+                    <button class="btn btn-secondary btn-sm" onclick="setSampleText('Ciao mondo! Come funziona ChatGPT?')">Esempio 1</button>
+                    <button class="btn btn-secondary btn-sm" onclick="setSampleText('def calcola_somma(a, b): return a + b')">Codice Python</button>
+                    <button class="btn btn-secondary btn-sm" onclick="setSampleText('Incredibile 🚀✨ 2026!')">Emoji & Numeri</button>
+                </div>
+
+                <div class="token-display" id="tokenOutput"></div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--text-secondary); background: #f8faff; padding: 0.75rem 1rem; border-radius: 12px; border: 1.5px solid var(--border-color);">
+                    <span>Caratteri: <strong id="charCount" style="color: var(--accent-purple);">0</strong></span>
+                    <span>Token generati: <strong id="tokenCount" style="color: var(--accent-pink);">0</strong></span>
+                    <span>Rapporto: <strong id="ratioCount" style="color: var(--accent-cyan);">0</strong> car/token</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <div></div>
+            <button class="btn" onclick="goToSection('sec-ml')">Avanti: Machine Learning →</button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         SEZIONE 2: MACHINE LEARNING
+    ====================================================================== -->
+    <section id="sec-ml" class="module-section">
+        <div class="section-header">
+            <div class="section-title-group">
+                <h2><span>🤖</span> 2. I Paradigmi del Machine Learning</h2>
+                <p>A differenza della programmazione tradizionale (regole scritte a mano), il Machine Learning estrae schemi statistici direttamente dai dati.</p>
+            </div>
+            <span class="tag tag-purple">Apprendimento</span>
+        </div>
+
+        <div class="grid-3">
+            <div class="card">
+                <span class="tag tag-cyan" style="margin-bottom: 0.65rem;">1. Auto-Supervisionato</span>
+                <h3>Self-Supervised Learning</h3>
+                <p>Il cuore degli LLM. Il modello prende un testo e nasconde la parola successiva, provando a indovinarla miliardi di volte senza bisogno di etichette umane.</p>
+                <div style="background: #ecfeff; border: 1.5px solid #a5f3fc; padding: 0.85rem; border-radius: 12px; font-family: monospace; font-size: 0.86rem; color: #0e7490;">
+                    Input: "Il gatto dorme sul ___"<br>
+                    Target: <span style="color: #059669; font-weight: bold;">"divano"</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <span class="tag tag-purple" style="margin-bottom: 0.65rem;">2. Supervisionato</span>
+                <h3>Supervised Learning</h3>
+                <p>Esperti umani forniscono coppie <strong>Domanda → Risposta ideale</strong> per insegnare al modello a seguire istruzioni, riassumere o tradurre.</p>
+                <div style="background: #f5f3ff; border: 1.5px solid #ddd6fe; padding: 0.85rem; border-radius: 12px; font-family: monospace; font-size: 0.86rem; color: #5b21b6;">
+                    Prompt: "Traduci in inglese: Sole"<br>
+                    Label: <span style="color: #7c3aed; font-weight: bold;">"Sun"</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <span class="tag tag-emerald" style="margin-bottom: 0.65rem;">3. Rinforzo (RLHF)</span>
+                <h3>Reinforcement Learning</h3>
+                <p>Il modello genera più risposte; un valutatore umano (o un modello di ricompensa) premia quelle più utili, sicure e oneste.</p>
+                <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; padding: 0.85rem; border-radius: 12px; font-family: monospace; font-size: 0.86rem; color: #065f46;">
+                    Risposta A: Utile (+1.0 🏆)<br>
+                    Risposta B: Evasiva (-0.8 ❌)
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🧪 Simulatore: Come ragiona il Machine Learning vs Codice Classico</h3>
+            <p>Seleziona uno scenario per vedere come i diversi approcci risolvono lo stesso problema:</p>
+            
+            <div class="ml-tabs">
+                <button class="ml-tab active" onclick="showMlTab('nextword', this)">Predizione Parola Successiva</button>
+                <button class="ml-tab" onclick="showMlTab('sentiment', this)">Analisi del Sentimento</button>
+                <button class="ml-tab" onclick="showMlTab('diffusion_ml', this)">Apprendimento Visivo (Immagini)</button>
+            </div>
+
+            <div class="ml-demo-box" id="mlDemoContent">
+                <!-- Popolato da JS -->
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="btn btn-secondary" onclick="goToSection('sec-data')">← Indietro</button>
+            <button class="btn" onclick="goToSection('sec-nn')">Avanti: Reti Neurali →</button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         SEZIONE 3: RETI NEURALI & TRANSFORMER
+    ====================================================================== -->
+    <section id="sec-nn" class="module-section">
+        <div class="section-header">
+            <div class="section-title-group">
+                <h2><span>🧠</span> 3. Reti Neurali & Architettura Transformer</h2>
+                <p>Ispirate al cervello umano, le reti neurali profonde elaborano segnali matematici attraverso miliardi di connessioni (parametri).</p>
+            </div>
+            <span class="tag tag-pink">Deep Learning</span>
+        </div>
+
+        <div class="grid-2">
+            <!-- Simulatore singolo neurone -->
+            <div class="card">
+                <h3>⚡ Anatomia di un Neurone Artificiale</h3>
+                <p>Ogni neurone riceve numeri in ingresso (<em>x</em>), li moltiplica per dei <strong>pesi</strong> (<em>w</em>), aggiunge un <strong>bias</strong> e applica una funzione di attivazione (ReLU).</p>
+                
+                <div class="neuron-controls">
+                    <div class="slider-group">
+                        <label>Input X₁: <span id="valX1" style="color: var(--accent-purple);">0.8</span></label>
+                        <input type="range" id="inX1" min="-1" max="1" step="0.1" value="0.8" oninput="updateNeuron()">
+                    </div>
+                    <div class="slider-group">
+                        <label>Peso W₁ (Importanza): <span id="valW1" style="color: var(--accent-pink);">1.5</span></label>
+                        <input type="range" id="inW1" min="-2" max="2" step="0.1" value="1.5" oninput="updateNeuron()">
+                    </div>
+                    <div class="slider-group">
+                        <label>Input X₂: <span id="valX2" style="color: var(--accent-purple);">-0.4</span></label>
+                        <input type="range" id="inX2" min="-1" max="1" step="0.1" value="-0.4" oninput="updateNeuron()">
+                    </div>
+                    <div class="slider-group">
+                        <label>Peso W₂ (Importanza): <span id="valW2" style="color: var(--accent-pink);">1.0</span></label>
+                        <input type="range" id="inW2" min="-2" max="2" step="0.1" value="1.0" oninput="updateNeuron()">
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem; padding: 1.1rem; background: linear-gradient(135deg, #f5f3ff, #fdf2f8); border-radius: 14px; border: 2px solid #fbcfe8;">
+                    <div style="font-size: 0.88rem; color: var(--text-secondary);">Calcolo: <code>(X₁ × W₁) + (X₂ × W₂) = <span id="neuronSum" style="font-weight:bold;">0.80</span></code></div>
+                    <div style="margin-top: 0.45rem; font-size: 1.05rem; font-weight: 800;">
+                        Output dopo attivazione (ReLU): <span id="neuronOut" style="color: var(--accent-emerald); font-size: 1.25rem;">0.80</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualizzatore Rete Neurale Profonda -->
+            <div class="card">
+                <h3>🕸️ Flusso nella Rete Profonda (Deep Neural Network)</h3>
+                <p>Un LLM impila decine di strati (<em>Layer</em>). I primi strati riconoscono la grammatica, quelli profondi astraggono logica, stile e ragionamento.</p>
+                <div class="nn-canvas-container">
+                    <canvas id="nnCanvas" width="460" height="220"></canvas>
+                    <div style="margin-top: 0.65rem;">
+                        <button class="btn btn-sm" onclick="pulseNetwork()">⚡ Invia Segnale nella Rete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meccanismo di Self-Attention -->
+        <div class="card">
+            <h3>🔍 Il Segreto degli LLM: La Self-Attention (Auto-Attenzione)</h3>
+            <p>Introdotta nel 2017 con l'architettura <strong>Transformer</strong>, la <em>Self-Attention</em> permette al modello di capire a quali parole fare riferimento in una frase per risolvere le ambiguità. <strong>Clicca su una parola qui sotto</strong> per vedere dove si concentra l'attenzione del modello:</p>
+
+            <div class="attention-words" id="attentionSentence">
+                <!-- Popolato via JS -->
+            </div>
+
+            <div id="attentionExplanation" style="background: #f5f3ff; border-left: 5px solid var(--accent-purple); padding: 1rem; border-radius: 0 12px 12px 0; font-size: 0.96rem; color: var(--text-primary);">
+                Clicca su <strong>"esso"</strong> o <strong>"stanco"</strong> per osservare come l'attenzione collega i concetti nella frase!
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="btn btn-secondary" onclick="goToSection('sec-ml')">← Indietro</button>
+            <button class="btn" onclick="goToSection('sec-train')">Avanti: Addestramento →</button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         SEZIONE 4: ADDESTRAMENTO (TRAINING)
+    ====================================================================== -->
+    <section id="sec-train" class="module-section">
+        <div class="section-header">
+            <div class="section-title-group">
+                <h2><span>🏋️</span> 4. Le 3 Fasi dell'Addestramento</h2>
+                <p>Come si trasforma una rete neurale con pesi casuali in un assistente intelligente capace di dialogare e ragionare.</p>
+            </div>
+            <span class="tag tag-amber">Ottimizzazione</span>
+        </div>
+
+        <div class="training-timeline">
+            <div class="stage-card stage-1">
+                <span class="tag tag-cyan">Fase 1 • Mesi su migliaia di GPU</span>
+                <h3 style="margin-top: 0.65rem;">Pre-Training (Base Model)</h3>
+                <p>Il modello legge trilioni di token. Attraverso la <strong>Backpropagation</strong> e la <strong>Discesa del Gradiente</strong>, aggiorna i suoi miliardi di pesi per ridurre l'errore di predizione (<em>Loss</em>).</p>
+                <div style="font-size: 0.85rem; color: #0e7490; background: #ecfeff; padding: 0.55rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                    Risultato: Un completatore di testo enciclopedico, ma non ancora un assistente conversazionale.
+                </div>
+            </div>
+
+            <div class="stage-card stage-2">
+                <span class="tag tag-purple">Fase 2 • Giorni / Settimane</span>
+                <h3 style="margin-top: 0.65rem;">Supervised Fine-Tuning (SFT)</h3>
+                <p>Il modello viene addestrato su decine di migliaia di conversazioni scritte da esperti umani per imparare il formato <em>Utente / Assistente</em>.</p>
+                <div style="font-size: 0.85rem; color: #6d28d9; background: #f5f3ff; padding: 0.55rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                    Risultato: Impara a rispondere alle domande, seguire istruzioni e scrivere codice.
+                </div>
+            </div>
+
+            <div class="stage-card stage-3">
+                <span class="tag tag-emerald">Fase 3 • Allineamento</span>
+                <h3 style="margin-top: 0.65rem;">RLHF / DPO (Allineamento)</h3>
+                <p>Attraverso il feedback umano sulle preferenze, il modello affina il tono, impara ad ammettere quando non sa qualcosa ed evita contenuti pericolosi.</p>
+                <div style="font-size: 0.85rem; color: #047857; background: #ecfdf5; padding: 0.55rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                    Risultato: Un assistente AI utile, sicuro e allineato ai valori umani.
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulatore di Training / Loss -->
+        <div class="card">
+            <h3>📉 Simulatore di Addestramento: Dal Caos alla Conoscenza</h3>
+            <p>Sposta lo slider per simulare l'avanzamento delle epoche di addestramento e osserva come cambia la <strong>Loss (Errore)</strong> e la qualità delle risposte del modello:</p>
+
+            <div class="slider-group" style="margin-bottom: 1rem;">
+                <label>Progresso Addestramento: <span id="trainPercent" style="color: var(--accent-purple); font-size: 1rem;">0% (Inizializzazione Casuale)</span></label>
+                <input type="range" id="trainSlider" min="0" max="100" value="0" oninput="updateTrainingSim()">
+            </div>
+
+            <div class="grid-2" style="margin-bottom: 0;">
+                <div class="loss-meter">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 700;">Valore Errore (Cross-Entropy Loss):</div>
+                    <div id="lossValue" style="font-size: 2.1rem; font-weight: 900; color: #ef4444; margin: 0.25rem 0;">10.82</div>
+                    <div style="height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin-top: 0.5rem;">
+                        <div id="lossBar" style="height: 100%; width: 100%; background: #ef4444; transition: all 0.2s;"></div>
+                    </div>
+                </div>
+
+                <div class="loss-meter">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 700;">Prompt: <em>"Spiega cos'è la fotosintesi:"</em></div>
+                    <div id="trainSampleOutput" style="margin-top: 0.5rem; font-family: monospace; font-size: 0.94rem; color: var(--text-primary); font-weight: 600;">
+                        xk9! mela qwert 772 blu tavolo zzz...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="btn btn-secondary" onclick="goToSection('sec-nn')">← Indietro</button>
+            <button class="btn" onclick="goToSection('sec-gen')">Avanti: Generazione Live →</button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         SEZIONE 5: GENERAZIONE LIVE (TESTO E IMMAGINI)
+    ====================================================================== -->
+    <section id="sec-gen" class="module-section">
+        <div class="section-header">
+            <div class="section-title-group">
+                <h2><span>✨</span> 5. Simulatore Generativo Live</h2>
+                <p>Osserva in tempo reale come l'AI crea un <strong>testo</strong> (predizione autoregressiva) oppure un'<strong>immagine</strong> (diffusione latente).</p>
+            </div>
+            <span class="tag tag-emerald">Inferenza Live</span>
+        </div>
+
+        <div style="text-align: center;">
+            <div class="gen-mode-switch">
+                <button class="mode-btn active" id="btnModeText" onclick="switchGenMode('text')">📝 Generazione Testo (LLM)</button>
+                <button class="mode-btn" id="btnModeImage" onclick="switchGenMode('image')">🎨 Generazione Immagine (Diffusion)</button>
+            </div>
+        </div>
+
+        <!-- MODALITÀ 1: GENERAZIONE TESTO -->
+        <div id="genTextContainer">
+            <div class="grid-2">
+                <div class="card">
+                    <h3>✍️ Prompt & Parametri di Campionamento</h3>
+                    <p>Un LLM genera un token alla volta. Ad ogni passo calcola una distribuzione di probabilità su tutto il suo vocabolario.</p>
+                    
+                    <label style="font-size: 0.85rem; color: var(--text-primary); font-weight: 700; display: block; margin-bottom: 0.4rem;">Scegli un Prompt iniziale:</label>
+                    <select id="promptSelect" onchange="resetTextGen()">
+                        <option value="space">🚀 "Nel 2050 la prima colonia umana su Marte..."</option>
+                        <option value="chef">🍝 "Il segreto per preparare una carbonara perfetta è..."</option>
+                        <option value="ai">🤖 "L'intelligenza artificiale aiuta gli scienziati a..."</option>
+                    </select>
+
+                    <div class="slider-group" style="margin-top: 1rem;">
+                        <label>Temperatura (Creatività): <span id="tempVal" style="color: var(--accent-pink); font-weight: 800;">0.7</span></label>
+                        <input type="range" id="tempSlider" min="0.1" max="1.5" step="0.1" value="0.7" oninput="document.getElementById('tempVal').innerText = this.value">
+                        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.35rem;">
+                            <strong>Bassa (0.1):</strong> Scelte conservative e deterministiche. <strong>Alta (1.5):</strong> Più creativa e imprevedibile.
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.65rem; margin-top: 1.2rem; flex-wrap: wrap;">
+                        <button class="btn" id="btnNextToken" onclick="generateNextToken()">▶ Genera Prossimo Token</button>
+                        <button class="btn btn-secondary" id="btnAutoGen" onclick="toggleAutoGen()">⚡ Auto-Completa</button>
+                        <button class="btn btn-secondary" onclick="resetTextGen()">↺ Reset</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>📊 Probabilità del Prossimo Token (Softmax)</h3>
+                    <p>Ecco i token candidati più probabili valutati dalla rete neurale in questo preciso istante:</p>
+                    <div id="probBarsContainer" style="margin-top: 1rem;">
+                        <!-- Barre probabilità dinamiche -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>💬 Output Generato Token-per-Token</h3>
+                <div class="generated-output-box" id="generatedTextOutput">
+                    <!-- Testo generato -->
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                    💡 <strong>Nota tecnica:</strong> Ogni volta che viene scelto un nuovo token, questo viene aggiunto all'input e l'intero processo ricomincia da capo (<em>Generazione Autoregressiva</em>).
+                </div>
+            </div>
+        </div>
+
+        <!-- MODALITÀ 2: GENERAZIONE IMMAGINE (DIFFUSION) -->
+        <div id="genImageContainer" style="display: none;">
+            <div class="grid-2">
+                <div class="card">
+                    <h3>🎨 Come funziona la Latent Diffusion</h3>
+                    <p>I generatori di immagini AI (come Midjourney, DALL-E o Stable Diffusion) partono da puro <strong>rumore casuale (Gaussian Noise)</strong> e lo "scolpiscono" progressivamente guidati dal tuo prompt testuale:</p>
+                    
+                    <label style="font-size: 0.85rem; color: var(--text-primary); font-weight: 700; display: block; margin-bottom: 0.4rem;">Prompt Visivo:</label>
+                    <select id="imgPromptSelect" onchange="resetDiffusion()">
+                        <option value="sunset">🌅 "Tramonto futuristico sull'oceano con montagne al neon"</option>
+                        <option value="planet">🪐 "Un pianeta alieno luminoso nello spazio profondo"</option>
+                        <option value="forest">🌲 "Foresta incantata di notte sotto una luna piena"</option>
+                    </select>
+
+                    <div style="margin-top: 1.25rem; display: flex; gap: 0.65rem; flex-wrap: wrap;">
+                        <button class="btn" id="btnStepDiff" onclick="stepDiffusion()">✨ Passo di Denoising (+1)</button>
+                        <button class="btn btn-secondary" id="btnAutoDiff" onclick="runFullDiffusion()">🚀 Genera Immagine Completa</button>
+                        <button class="btn btn-secondary" onclick="resetDiffusion()">↺ Torna al Rumore</button>
+                    </div>
+
+                    <div style="margin-top: 1.25rem; background: #f5f3ff; padding: 1.05rem; border-radius: 14px; border: 1.5px solid #ddd6fe; font-size: 0.9rem;">
+                        <strong>Stato attuale:</strong> <span id="diffStatusText" style="color: var(--accent-purple); font-weight: 700;">Step 0/10 — Rumore Gaussiano Puro (100% caos)</span>
+                    </div>
+                </div>
+
+                <div class="card diffusion-wrapper">
+                    <h3>🖼️ Processo di Denoising (Rimozione Rumore)</h3>
+                    <canvas id="diffusionCanvas" width="320" height="240"></canvas>
+                    <div class="step-indicator" id="diffStepDots"></div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); text-align: center;">
+                        Ad ogni iterazione la rete neurale (U-Net / DiT) predice il rumore presente e lo sottrae per far emergere l'immagine coerente col prompt.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="btn btn-secondary" onclick="goToSection('sec-train')">← Indietro</button>
+            <button class="btn" onclick="goToSection('sec-data')">↺ Ricomincia il Percorso</button>
+        </div>
+    </section>
+</main>
+
+<script>
+    // =========================================================================
+    // NAVIGAZIONE TRA LE SEZIONI
+    // =========================================================================
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const sections = document.querySelectorAll('.module-section');
+
+    function goToSection(targetId) {
+        navButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.target === targetId);
+        });
+        sections.forEach(sec => {
+            sec.classList.toggle('active', sec.id === targetId);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        if (targetId === 'sec-nn') {
+            drawNeuralNetwork(0);
+        }
+    }
+
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => goToSection(btn.dataset.target));
+    });
+
+    // =========================================================================
+    // MODULO 1: TOKENIZZATORE INTERATTIVO
+    // =========================================================================
+    const tokenColors = [
+        { bg: '#ede9fe', border: '#c4b5fd', text: '#5b21b6' },
+        { bg: '#cffafe', border: '#67e8f9', text: '#0e7490' },
+        { bg: '#d1fae5', border: '#6ee7b7', text: '#047857' },
+        { bg: '#fef3c7', border: '#fcd34d', text: '#b45309' },
+        { bg: '#fce7f3', border: '#f9a8d4', text: '#be185d' },
+        { bg: '#e0e7ff', border: '#a5b4fc', text: '#3730a3' }
+    ];
+
+    function pseudoTokenize(text) {
+        if (!text) return [];
+        const rawParts = text.match(/(\s+|[.,!?;:()"']+|[a-zA-ZÀ-ÿ]{1,4}|[0-9]+|.)/gu) || [];
+        return rawParts.map(part => {
+            let hash = 0;
+            for (let i = 0; i < part.length; i++) {
+                hash = ((hash << 5) - hash) + part.charCodeAt(i);
+                hash |= 0;
+            }
+            const tokenId = Math.abs(hash % 49500) + 256;
+            return { text: part, id: tokenId };
+        });
+    }
+
+    function renderTokens() {
+        const input = document.getElementById('tokenizerInput').value;
+        const container = document.getElementById('tokenOutput');
+        const tokens = pseudoTokenize(input);
+
+        container.innerHTML = '';
+        tokens.forEach((tok, idx) => {
+            const c = tokenColors[idx % tokenColors.length];
+            const chip = document.createElement('div');
+            chip.className = 'token-chip';
+            chip.style.backgroundColor = c.bg;
+            chip.style.borderColor = c.border;
+            chip.style.color = c.text;
+            
+            const displayTxt = tok.text.replace(/ /g, '·').replace(/\n/g, '↵');
+            chip.innerHTML = `<span>${escapeHtml(displayTxt)}</span><span class="token-id">#${tok.id}</span>`;
+            container.appendChild(chip);
+        });
+
+        document.getElementById('charCount').innerText = input.length;
+        document.getElementById('tokenCount').innerText = tokens.length;
+        document.getElementById('ratioCount').innerText = tokens.length > 0 ? (input.length / tokens.length).toFixed(1) : '0';
+    }
+
+    function setSampleText(txt) {
+        document.getElementById('tokenizerInput').value = txt;
+        renderTokens();
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    document.getElementById('tokenizerInput').addEventListener('input', renderTokens);
+    renderTokens();
+
+    // =========================================================================
+    // MODULO 2: MACHINE LEARNING TABS
+    // =========================================================================
+    const mlDemos = {
+        nextword: `
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <div style="background: #ffffff; padding: 1.05rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
+                    <strong style="color: #ef4444;">❌ Programmazione Tradizionale</strong>
+                    <p style="font-size: 0.88rem; margin-top: 0.45rem;">Bisognerebbe scrivere milioni di regole grammaticali tipo: <code>IF parola == "mangia" THEN prossimo = "mela"</code>. Impossibile da scalare per ogni contesto umano.</p>
+                </div>
+                <div style="background: #ffffff; padding: 1.05rem; border-radius: 12px; border: 1.5px solid #a7f3d0;">
+                    <strong style="color: #059669;">✅ Machine Learning (LLM)</strong>
+                    <p style="font-size: 0.88rem; margin-top: 0.45rem;">Analizzando miliardi di frasi, il modello impara distribuzioni statistiche profonde: dopo <em>"La capitale della Francia è"</em>, <strong>"Parigi"</strong> ha probabilità 99.4%.</p>
+                </div>
+            </div>
+        `,
+        sentiment: `
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <div style="background: #ffffff; padding: 1.05rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
+                    <strong style="color: #ef4444;">❌ Approccio a Parole Chiave</strong>
+                    <p style="font-size: 0.88rem; margin-top: 0.45rem;">Cerca parole come "bello" o "brutto". Ma fallisce con l'ironia: <em>"Fantastico, il volo è stato cancellato!"</em> verrebbe classificato come positivo.</p>
+                </div>
+                <div style="background: #ffffff; padding: 1.05rem; border-radius: 12px; border: 1.5px solid #a7f3d0;">
+                    <strong style="color: #059669;">✅ Rappresentazione Vettoriale</strong>
+                    <p style="font-size: 0.88rem; margin-top: 0.45rem;">La rete neurale coglie la contraddizione tra "Fantastico" e "volo cancellato", classificando correttamente il tono come <strong>sarcastico/negativo</strong>.</p>
+                </div>
+            </div>
+        `,
+        diffusion_ml: `
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <div style="background: #ffffff; padding: 1.05rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
+                    <strong style="color: #ef4444;">❌ Grafica Vettoriale / 3D Manuale</strong>
+                    <p style="font-size: 0.88rem; margin-top: 0.45rem;">Ogni pixel, luce o ombra richiede istruzioni geometriche esplicite programmate da un artista o sviluppatore.</p>
+                </div>
+                <div style="background: #ffffff; padding: 1.05rem; border-radius: 12px; border: 1.5px solid #a7f3d0;">
+                    <strong style="color: #059669;">✅ Modelli di Diffusione (AI Visiva)</strong>
+                    <p style="font-size: 0.88rem; margin-top: 0.45rem;">Addestrato su milioni di coppie <em>Immagine + Didascalia</em>, il modello impara a invertire il processo di degradazione del rumore ricostruendo forme, luci e stili.</p>
+                </div>
+            </div>
+        `
+    };
+
+    function showMlTab(key, btnEl) {
+        document.querySelectorAll('.ml-tab').forEach(t => t.classList.remove('active'));
+        if (btnEl) btnEl.classList.add('active');
+        document.getElementById('mlDemoContent').innerHTML = mlDemos[key];
+    }
+    showMlTab('nextword', document.querySelector('.ml-tab'));
+
+    // =========================================================================
+    // MODULO 3: NEURONE ARTIFICIALE, RETE PROFONDA & SELF-ATTENTION
+    // =========================================================================
+    function updateNeuron() {
+        const x1 = parseFloat(document.getElementById('inX1').value);
+        const w1 = parseFloat(document.getElementById('inW1').value);
+        const x2 = parseFloat(document.getElementById('inX2').value);
+        const w2 = parseFloat(document.getElementById('inW2').value);
+
+        document.getElementById('valX1').innerText = x1.toFixed(1);
+        document.getElementById('valW1').innerText = w1.toFixed(1);
+        document.getElementById('valX2').innerText = x2.toFixed(1);
+        document.getElementById('valW2').innerText = w2.toFixed(1);
+
+        const sum = (x1 * w1) + (x2 * w2);
+        const relu = Math.max(0, sum);
+
+        document.getElementById('neuronSum').innerText = sum.toFixed(2);
+        const outEl = document.getElementById('neuronOut');
+        outEl.innerText = relu.toFixed(2) + (relu === 0 ? " (Neurone Spento)" : " (Neurone Attivo!)");
+        outEl.style.color = relu > 0 ? "#059669" : "#ef4444";
+    }
+    updateNeuron();
+
+    // Canvas Rete Neurale Profonda
+    const nnCanvas = document.getElementById('nnCanvas');
+    const nnCtx = nnCanvas.getContext('2d');
+    const layers = [3, 5, 5, 2];
+    const layerNames = ["Input", "Hidden 1", "Hidden 2", "Output"];
+    const layerColors = ["#06b6d4", "#7c3aed", "#ec4899", "#10b981"];
+
+    function drawNeuralNetwork(activeLayer = -1) {
+        const w = nnCanvas.width;
+        const h = nnCanvas.height;
+        nnCtx.clearRect(0, 0, w, h);
+
+        const nodePositions = [];
+        const xSpacing = w / (layers.length + 1);
+
+        layers.forEach((count, lIdx) => {
+            const x = xSpacing * (lIdx + 1);
+            const ySpacing = (h - 35) / (count + 1);
+            const layerNodes = [];
+            for (let n = 0; n < count; n++) {
+                layerNodes.push({ x, y: ySpacing * (n + 1) });
+            }
+            nodePositions.push(layerNodes);
+        });
+
+        // Connessioni
+        for (let l = 0; l < nodePositions.length - 1; l++) {
+            const isSignalPassing = (activeLayer === l || activeLayer === l + 1);
+            nodePositions[l].forEach(n1 => {
+                nodePositions[l + 1].forEach(n2 => {
+                    nnCtx.beginPath();
+                    nnCtx.moveTo(n1.x, n1.y);
+                    nnCtx.lineTo(n2.x, n2.y);
+                    nnCtx.strokeStyle = isSignalPassing ? '#ec4899' : '#cbd5e1';
+                    nnCtx.lineWidth = isSignalPassing ? 2.5 : 1.2;
+                    nnCtx.stroke();
+                });
+            });
+        }
+
+        // Nodi
+        nodePositions.forEach((layer, lIdx) => {
+            const isActive = (activeLayer === lIdx);
+            layer.forEach(node => {
+                nnCtx.beginPath();
+                nnCtx.arc(node.x, node.y, isActive ? 13 : 10, 0, Math.PI * 2);
+                nnCtx.fillStyle = isActive ? '#f59e0b' : layerColors[lIdx];
+                nnCtx.fill();
+                nnCtx.strokeStyle = '#ffffff';
+                nnCtx.lineWidth = 2.5;
+                nnCtx.stroke();
+            });
+
+            nnCtx.fillStyle = '#475569';
+            nnCtx.font = 'bold 11px sans-serif';
+            nnCtx.textAlign = 'center';
+            nnCtx.fillText(layerNames[lIdx], layer[0].x, h - 10);
+        });
+    }
+
+    function pulseNetwork() {
+        let step = 0;
+        const interval = setInterval(() => {
+            drawNeuralNetwork(step);
+            step++;
+            if (step > layers.length) {
+                clearInterval(interval);
+                setTimeout(() => drawNeuralNetwork(-1), 300);
+            }
+        }, 250);
+    }
+    drawNeuralNetwork(-1);
+
+    // Self-Attention Interactive Sentence
+    const attWords = ["Il", "robot", "non", "attraversò", "la", "strada", "perché", "esso", "era", "troppo", "stanco"];
+    const attRelations = {
+        7: {
+            targets: { 1: 0.92, 5: 0.08 },
+            desc: "Il pronome <strong>'esso'</strong> attiva un'attenzione altissima (92%) verso <strong>'robot'</strong> e quasi nulla verso 'strada', perché solo un robot (e non una strada) può essere 'stanco'!"
+        },
+        10: {
+            targets: { 1: 0.88, 7: 0.85 },
+            desc: "L'aggettivo <strong>'stanco'</strong> si collega fortemente a <strong>'esso'</strong> (85%) e <strong>'robot'</strong> (88%), consolidando il significato dell'intera frase."
+        },
+        3: {
+            targets: { 1: 0.75, 5: 0.80 },
+            desc: "Il verbo <strong>'attraversò'</strong> collega il soggetto (<strong>'robot'</strong>) al complemento oggetto (<strong>'strada'</strong>)."
+        }
+    };
+
+    function initAttention() {
+        const container = document.getElementById('attentionSentence');
+        container.innerHTML = '';
+        attWords.forEach((word, idx) => {
+            const span = document.createElement('span');
+            span.className = 'att-word';
+            span.innerText = word;
+            span.dataset.idx = idx;
+            span.onclick = () => selectAttentionWord(idx);
+            container.appendChild(span);
+        });
+    }
+
+    function selectAttentionWord(selectedIdx) {
+        const wordEls = document.querySelectorAll('.att-word');
+        wordEls.forEach(el => {
+            el.classList.remove('selected');
+            el.style.background = '#f1f5f9';
+            el.style.borderColor = '#cbd5e1';
+            el.style.color = '#111827';
+        });
+
+        wordEls[selectedIdx].classList.add('selected');
+
+        const rel = attRelations[selectedIdx];
+        if (rel) {
+            Object.entries(rel.targets).forEach(([targetIdx, weight]) => {
+                const el = wordEls[targetIdx];
+                el.style.background = `rgba(236, 72, 153, ${weight * 0.25})`;
+                el.style.borderColor = '#ec4899';
+                el.style.color = '#9d174d';
+            });
+            document.getElementById('attentionExplanation').innerHTML = rel.desc;
+        } else {
+            const prevIdx = Math.max(0, selectedIdx - 1);
+            wordEls[prevIdx].style.background = 'rgba(6, 182, 212, 0.2)';
+            wordEls[prevIdx].style.borderColor = '#06b6d4';
+            document.getElementById('attentionExplanation').innerHTML = `La parola <strong>"${attWords[selectedIdx]}"</strong> scambia informazioni contestuali con le parole adiacenti per mantenere la coerenza grammaticale.`;
+        }
+    }
+    initAttention();
+
+    // =========================================================================
+    // MODULO 4: SIMULATORE DI ADDESTRAMENTO
+    // =========================================================================
+    function updateTrainingSim() {
+        const val = parseInt(document.getElementById('trainSlider').value);
+        const label = document.getElementById('trainPercent');
+        const lossVal = document.getElementById('lossValue');
+        const lossBar = document.getElementById('lossBar');
+        const output = document.getElementById('trainSampleOutput');
+
+        const loss = (10.82 * Math.exp(-0.032 * val) + 0.45).toFixed(2);
+        lossVal.innerText = loss;
+
+        const barPct = Math.max(6, 100 - val * 0.92);
+        lossBar.style.width = barPct + '%';
+
+        if (val < 20) {
+            label.innerText = `${val}% (Pesi Casuali - Inizio Pre-training)`;
+            lossVal.style.color = '#ef4444';
+            lossBar.style.background = '#ef4444';
+            output.innerText = "xk9! mela qwert 772 blu tavolo zzz...";
+        } else if (val < 55) {
+            label.innerText = `${val}% (Pre-training Intermedio - Impara la grammatica)`;
+            lossVal.style.color = '#f97316';
+            lossBar.style.background = '#f97316';
+            output.innerText = "La fotosintesi è una pianta verde che luce acqua sole molto...";
+        } else if (val < 85) {
+            label.innerText = `${val}% (Fine-Tuning SFT - Segue le istruzioni)`;
+            lossVal.style.color = '#7c3aed';
+            lossBar.style.background = '#7c3aed';
+            output.innerText = "La fotosintesi clorofilliana è il processo chimico con cui le piante trasformano la luce solare in energia.";
+        } else {
+            label.innerText = `${val}% (Allineamento RLHF Completo - Assistente Esperto)`;
+            lossVal.style.color = '#059669';
+            lossBar.style.background = '#10b981';
+            output.innerText = "La fotosintesi è il processo biologico mediante il quale piante e alghe convertono anidride carbonica e acqua in glucosio e ossigeno, utilizzando l'energia della luce solare.";
+        }
+    }
+
+    // =========================================================================
+    // MODULO 5A: GENERATORE TESTO AUTOREGRESSIVO
+    // =========================================================================
+    const textScenarios = {
+        space: {
+            base: "Nel 2050 la prima colonia umana su Marte",
+            steps: [
+                [
+                    { token: " utilizzerà", baseProb: 0.52 },
+                    { token: " produrrà", baseProb: 0.28 },
+                    { token: " coltiverà", baseProb: 0.14 },
+                    { token: " sognerà", baseProb: 0.06 }
+                ],
+                [
+                    { token: " cupole", baseProb: 0.48 },
+                    { token: " energia", baseProb: 0.30 },
+                    { token: " robot", baseProb: 0.15 },
+                    { token: " cristalli", baseProb: 0.07 }
+                ],
+                [
+                    { token: " pressurizzate", baseProb: 0.55 },
+                    { token: " solari", baseProb: 0.25 },
+                    { token: " autonome", baseProb: 0.14 },
+                    { token: " invisibili", baseProb: 0.06 }
+                ],
+                [
+                    { token: " per", baseProb: 0.65 },
+                    { token: " alimentate", baseProb: 0.22 },
+                    { token: " costruite", baseProb: 0.09 },
+                    { token: " fluttuanti", baseProb: 0.04 }
+                ],
+                [
+                    { token: " proteggere", baseProb: 0.50 },
+                    { token: " coltivare", baseProb: 0.32 },
+                    { token: " ospitare", baseProb: 0.13 },
+                    { token: " teletrasportare", baseProb: 0.05 }
+                ],
+                [
+                    { token: " gli", baseProb: 0.60 },
+                    { token: " i", baseProb: 0.28 },
+                    { token: " cento", baseProb: 0.08 },
+                    { token: " tutti", baseProb: 0.04 }
+                ],
+                [
+                    { token: " astronauti.", baseProb: 0.58 },
+                    { token: " scienziati.", baseProb: 0.27 },
+                    { token: " coloni.", baseProb: 0.11 },
+                    { token: " esploratori.", baseProb: 0.04 }
+                ]
+            ]
+        },
+        chef: {
+            base: "Il segreto per preparare una carbonara perfetta è",
+            steps: [
+                [
+                    { token: " usare", baseProb: 0.55 },
+                    { token: " mantecare", baseProb: 0.25 },
+                    { token: " scegliere", baseProb: 0.14 },
+                    { token: " evitare", baseProb: 0.06 }
+                ],
+                [
+                    { token: " guanciale", baseProb: 0.62 },
+                    { token: " tuorli", baseProb: 0.22 },
+                    { token: " pecorino", baseProb: 0.12 },
+                    { token: " tartufo", baseProb: 0.04 }
+                ],
+                [
+                    { token: " croccante", baseProb: 0.58 },
+                    { token: " stagionato", baseProb: 0.24 },
+                    { token: " fresco", baseProb: 0.13 },
+                    { token: " affumicato", baseProb: 0.05 }
+                ],
+                [
+                    { token: " e", baseProb: 0.64 },
+                    { token: " senza", baseProb: 0.21 },
+                    { token: " con", baseProb: 0.11 },
+                    { token: " lontano", baseProb: 0.04 }
+                ],
+                [
+                    { token: " creare", baseProb: 0.48 },
+                    { token: " aggiungere", baseProb: 0.30 },
+                    { token: " montare", baseProb: 0.16 },
+                    { token: " servire", baseProb: 0.06 }
+                ],
+                [
+                    { token: " una", baseProb: 0.68 },
+                    { token: " la", baseProb: 0.22 },
+                    { token: " questa", baseProb: 0.07 },
+                    { token: " tanta", baseProb: 0.03 }
+                ],
+                [
+                    { token: " cremina.", baseProb: 0.60 },
+                    { token: " salsa.", baseProb: 0.25 },
+                    { token: " magia.", baseProb: 0.10 },
+                    { token: " bontà.", baseProb: 0.05 }
+                ]
+            ]
+        },
+        ai: {
+            base: "L'intelligenza artificiale aiuta gli scienziati a",
+            steps: [
+                [
+                    { token: " scoprire", baseProb: 0.54 },
+                    { token: " analizzare", baseProb: 0.28 },
+                    { token: " simulare", baseProb: 0.13 },
+                    { token: " immaginare", baseProb: 0.05 }
+                ],
+                [
+                    { token: " nuovi", baseProb: 0.56 },
+                    { token: " molecole", baseProb: 0.24 },
+                    { token: " modelli", baseProb: 0.14 },
+                    { token: " segreti", baseProb: 0.06 }
+                ],
+                [
+                    { token: " farmaci", baseProb: 0.52 },
+                    { token: " materiali", baseProb: 0.28 },
+                    { token: " pianeti", baseProb: 0.14 },
+                    { token: " universi", baseProb: 0.06 }
+                ],
+                [
+                    { token: " in", baseProb: 0.62 },
+                    { token: " riducendo", baseProb: 0.22 },
+                    { token: " con", baseProb: 0.11 },
+                    { token: " sfidando", baseProb: 0.05 }
+                ],
+                [
+                    { token: " tempi", baseProb: 0.58 },
+                    { token: " pochi", baseProb: 0.26 },
+                    { token: " modo", baseProb: 0.11 },
+                    { token: " laboratori", baseProb: 0.05 }
+                ],
+                [
+                    { token: " record.", baseProb: 0.65 },
+                    { token: " brevi.", baseProb: 0.22 },
+                    { token: " incredibili.", baseProb: 0.09 },
+                    { token: " quantistici.", baseProb: 0.04 }
+                ]
+            ]
+        }
+    };
+
+    let currentTextStep = 0;
+    let currentGeneratedString = "";
+    let autoGenInterval = null;
+
+    function getAdjustedProbs(candidates, temp) {
+        const scaled = candidates.map(c => ({
+            token: c.token,
+            weight: Math.pow(c.baseProb, 1 / temp)
+        }));
+        const sum = scaled.reduce((acc, item) => acc + item.weight, 0);
+        return scaled.map(item => ({
+            token: item.token,
+            prob: item.weight / sum
+        }));
+    }
+
+    function renderProbBars() {
+        const scenarioKey = document.getElementById('promptSelect').value;
+        const scenario = textScenarios[scenarioKey];
+        const container = document.getElementById('probBarsContainer');
+        const temp = parseFloat(document.getElementById('tempSlider').value);
+
+        if (currentTextStep >= scenario.steps.length) {
+            container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #059669; font-weight: 700; background: #ecfdf5; border-radius: 12px; border: 1.5px solid #a7f3d0;">✅ Sequenza completata! Token <code>&lt;|endoftext|&gt;</code> raggiunto.</div>`;
+            document.getElementById('btnNextToken').disabled = true;
+            return;
+        }
+
+        document.getElementById('btnNextToken').disabled = false;
+        const adjusted = getAdjustedProbs(scenario.steps[currentTextStep], temp);
+
+        container.innerHTML = adjusted.map(item => {
+            const pct = (item.prob * 100).toFixed(1);
+            return `
+                <div class="prob-bar-row">
+                    <div class="prob-word">"${escapeHtml(item.token)}"</div>
+                    <div class="prob-track">
+                        <div class="prob-fill" style="width: ${pct}%"></div>
+                    </div>
+                    <div class="prob-val">${pct}%</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function generateNextToken() {
+        const scenarioKey = document.getElementById('promptSelect').value;
+        const scenario = textScenarios[scenarioKey];
+        if (currentTextStep >= scenario.steps.length) {
+            stopAutoGen();
+            return;
+        }
+
+        const temp = parseFloat(document.getElementById('tempSlider').value);
+        const adjusted = getAdjustedProbs(scenario.steps[currentTextStep], temp);
+
+        const r = Math.random();
+        let cumulative = 0;
+        let chosen = adjusted[0].token;
+        for (const item of adjusted) {
+            cumulative += item.prob;
+            if (r <= cumulative) {
+                chosen = item.token;
+                break;
+            }
+        }
+
+        currentGeneratedString += `<span style="background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 6px; padding: 1px 5px; margin: 0 2px; color: #5b21b6; font-weight: 700;">${escapeHtml(chosen)}</span>`;
+        currentTextStep++;
+
+        updateGeneratedOutputDisplay();
+        renderProbBars();
+    }
+
+    function updateGeneratedOutputDisplay() {
+        const scenarioKey = document.getElementById('promptSelect').value;
+        const base = textScenarios[scenarioKey].base;
+        document.getElementById('generatedTextOutput').innerHTML = `<strong>${escapeHtml(base)}</strong>${currentGeneratedString}<span class="cursor-blink"></span>`;
+    }
+
+    function resetTextGen() {
+        stopAutoGen();
+        currentTextStep = 0;
+        currentGeneratedString = "";
+        updateGeneratedOutputDisplay();
+        renderProbBars();
+    }
+
+    function toggleAutoGen() {
+        if (autoGenInterval) {
+            stopAutoGen();
+        } else {
+            document.getElementById('btnAutoGen').innerText = "⏸ Pausa";
+            autoGenInterval = setInterval(generateNextToken, 650);
+        }
+    }
+
+    function stopAutoGen() {
+        if (autoGenInterval) {
+            clearInterval(autoGenInterval);
+            autoGenInterval = null;
+        }
+        document.getElementById('btnAutoGen').innerText = "⚡ Auto-Completa";
+    }
+
+    document.getElementById('tempSlider').addEventListener('input', renderProbBars);
+    resetTextGen();
+
+    // =========================================================================
+    // MODULO 5B: GENERATORE IMMAGINE (LATENT DIFFUSION)
+    // =========================================================================
+    function switchGenMode(mode) {
+        stopAutoGen();
+        const isText = (mode === 'text');
+        document.getElementById('btnModeText').classList.toggle('active', isText);
+        document.getElementById('btnModeImage').classList.toggle('active', !isText);
+        document.getElementById('genTextContainer').style.display = isText ? 'block' : 'none';
+        document.getElementById('genImageContainer').style.display = isText ? 'none' : 'block';
+        if (!isText) {
+            resetDiffusion();
+        }
+    }
+
+    const diffCanvas = document.getElementById('diffusionCanvas');
+    const diffCtx = diffCanvas.getContext('2d');
+    const maxDiffSteps = 10;
+    let currentDiffStep = 0;
+    let diffInterval = null;
+
+    const cleanCanvas = document.createElement('canvas');
+    cleanCanvas.width = diffCanvas.width;
+    cleanCanvas.height = diffCanvas.height;
+    const cleanCtx = cleanCanvas.getContext('2d');
+
+    function renderTargetScene(sceneType) {
+        const w = cleanCanvas.width;
+        const h = cleanCanvas.height;
+        cleanCtx.clearRect(0, 0, w, h);
+
+        if (sceneType === 'sunset') {
+            const sky = cleanCtx.createLinearGradient(0, 0, 0, h * 0.65);
+            sky.addColorStop(0, '#4f46e5');
+            sky.addColorStop(0.5, '#ec4899');
+            sky.addColorStop(1, '#f97316');
+            cleanCtx.fillStyle = sky;
+            cleanCtx.fillRect(0, 0, w, h * 0.65);
+
+            cleanCtx.beginPath();
+            cleanCtx.arc(w / 2, h * 0.55, 42, 0, Math.PI * 2);
+            cleanCtx.fillStyle = '#fde047';
+            cleanCtx.fill();
+
+            cleanCtx.fillStyle = '#312e81';
+            cleanCtx.beginPath();
+            cleanCtx.moveTo(0, h * 0.65);
+            cleanCtx.lineTo(75, h * 0.38);
+            cleanCtx.lineTo(155, h * 0.65);
+            cleanCtx.lineTo(245, h * 0.34);
+            cleanCtx.lineTo(w, h * 0.65);
+            cleanCtx.fill();
+
+            const sea = cleanCtx.createLinearGradient(0, h * 0.65, 0, h);
+            sea.addColorStop(0, '#06b6d4');
+            sea.addColorStop(1, '#1d4ed8');
+            cleanCtx.fillStyle = sea;
+            cleanCtx.fillRect(0, h * 0.65, w, h * 0.35);
+
+            cleanCtx.fillStyle = 'rgba(253, 224, 71, 0.75)';
+            cleanCtx.fillRect(w / 2 - 22, h * 0.67, 44, 6);
+            cleanCtx.fillRect(w / 2 - 14, h * 0.74, 28, 5);
+            cleanCtx.fillRect(w / 2 - 8, h * 0.81, 16, 4);
+        } else if (sceneType === 'planet') {
+            cleanCtx.fillStyle = '#0f172a';
+            cleanCtx.fillRect(0, 0, w, h);
+
+            cleanCtx.fillStyle = '#ffffff';
+            for (let i = 0; i < 45; i++) {
+                const sx = (i * 73) % w;
+                const sy = (i * 41) % h;
+                cleanCtx.fillRect(sx, sy, 2.5, 2.5);
+            }
+
+            const pGrad = cleanCtx.createRadialGradient(w * 0.45, h * 0.42, 10, w * 0.5, h * 0.5, 65);
+            pGrad.addColorStop(0, '#22d3ee');
+            pGrad.addColorStop(0.6, '#8b5cf6');
+            pGrad.addColorStop(1, '#ec4899');
+            cleanCtx.beginPath();
+            cleanCtx.arc(w / 2, h / 2, 58, 0, Math.PI * 2);
+            cleanCtx.fillStyle = pGrad;
+            cleanCtx.fill();
+
+            cleanCtx.strokeStyle = 'rgba(250, 204, 21, 0.85)';
+            cleanCtx.lineWidth = 8;
+            cleanCtx.beginPath();
+            cleanCtx.ellipse(w / 2, h / 2, 108, 22, -0.25, 0, Math.PI * 2);
+            cleanCtx.stroke();
+        } else if (sceneType === 'forest') {
+            const night = cleanCtx.createLinearGradient(0, 0, 0, h);
+            night.addColorStop(0, '#1e1b4b');
+            night.addColorStop(1, '#065f46');
+            cleanCtx.fillStyle = night;
+            cleanCtx.fillRect(0, 0, w, h);
+
+            cleanCtx.beginPath();
+            cleanCtx.arc(w * 0.72, h * 0.26, 30, 0, Math.PI * 2);
+            cleanCtx.fillStyle = '#fef08a';
+            cleanCtx.fill();
+
+            const trees = [30, 85, 140, 205, 265];
+            trees.forEach((tx, i) => {
+                const th = 95 + (i % 2) * 30;
+                cleanCtx.fillStyle = '#064e3b';
+                cleanCtx.beginPath();
+                cleanCtx.moveTo(tx, h - th);
+                cleanCtx.lineTo(tx - 32, h);
+                cleanCtx.lineTo(tx + 32, h);
+                cleanCtx.fill();
+            });
+        }
+    }
+
+    function drawDiffusionFrame() {
+        const w = diffCanvas.width;
+        const h = diffCanvas.height;
+        const progress = currentDiffStep / maxDiffSteps;
+
+        const cleanData = cleanCtx.getImageData(0, 0, w, h);
+        const outputData = diffCtx.createImageData(w, h);
+
+        const blockSize = Math.max(1, Math.floor((1 - progress) * 14));
+
+        for (let y = 0; y < h; y += blockSize) {
+            for (let x = 0; x < w; x += blockSize) {
+                const idx = (y * w + x) * 4;
+                const rClean = cleanData.data[idx];
+                const gClean = cleanData.data[idx + 1];
+                const bClean = cleanData.data[idx + 2];
+
+                const rNoise = Math.random() * 255;
+                const gNoise = Math.random() * 255;
+                const bNoise = Math.random() * 255;
+
+                const rFinal = rClean * progress + rNoise * (1 - progress);
+                const gFinal = gClean * progress + gNoise * (1 - progress);
+                const bFinal = bClean * progress + bNoise * (1 - progress);
+
+                for (let by = 0; by < blockSize && (y + by) < h; by++) {
+                    for (let bx = 0; bx < blockSize && (x + bx) < w; bx++) {
+                        const bIdx = ((y + by) * w + (x + bx)) * 4;
+                        outputData.data[bIdx] = rFinal;
+                        outputData.data[bIdx + 1] = gFinal;
+                        outputData.data[bIdx + 2] = bFinal;
+                        outputData.data[bIdx + 3] = 255;
+                    }
+                }
+            }
+        }
+
+        diffCtx.putImageData(outputData, 0, 0);
+        updateDiffusionUI();
+    }
+
+    function updateDiffusionUI() {
+        const dotsContainer = document.getElementById('diffStepDots');
+        dotsContainer.innerHTML = '';
+        for (let i = 1; i <= maxDiffSteps; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'step-dot' + (i <= currentDiffStep ? ' done' : '');
+            dotsContainer.appendChild(dot);
+        }
+
+        const statusEl = document.getElementById('diffStatusText');
+        if (currentDiffStep === 0) {
+            statusEl.innerText = "Step 0/10 — Rumore Gaussiano Puro (100% caos)";
+        } else if (currentDiffStep < 5) {
+            statusEl.innerText = `Step ${currentDiffStep}/10 — Emergenza forme e palette colori...`;
+        } else if (currentDiffStep < maxDiffSteps) {
+            statusEl.innerText = `Step ${currentDiffStep}/10 — Definizione contorni e illuminazione...`;
+        } else {
+            statusEl.innerText = "Step 10/10 — Immagine completata! Rumore rimosso al 100%.";
+        }
+    }
+
+    function stepDiffusion() {
+        if (currentDiffStep < maxDiffSteps) {
+            currentDiffStep++;
+            drawDiffusionFrame();
+        } else {
+            clearInterval(diffInterval);
+        }
+    }
+
+    function runFullDiffusion() {
+        if (currentDiffStep >= maxDiffSteps) resetDiffusion();
+        clearInterval(diffInterval);
+        diffInterval = setInterval(() => {
+            stepDiffusion();
+            if (currentDiffStep >= maxDiffSteps) clearInterval(diffInterval);
+        }, 300);
+    }
+
+    function resetDiffusion() {
+        clearInterval(diffInterval);
+        currentDiffStep = 0;
+        const promptType = document.getElementById('imgPromptSelect').value;
+        renderTargetScene(promptType);
+        drawDiffusionFrame();
+    }
+
+    resetDiffusion();
+</script>
+</body>
+</html>
